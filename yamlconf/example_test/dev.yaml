@@ -1,0 +1,35 @@
+runmode: debug               # 开发模式, debug, release, test
+port: 8086                 # HTTP绑定端口
+cert: resource/vvlgo.pem
+key: resource/vvlgo.key
+ip: http://192.168.1.161:8086
+inviterphone: [13666668888,13555552222]
+gormlog: true
+pdfpath: D:\GoProjects\src\b2b\static\pdffiles\
+pdftemp: D:\GoProjects\src\b2b\static\temp\
+wechattouser: TanHaiYing
+db:
+  type: mysql
+  dbname: b2b
+  addr: 192.168.1.161:3306
+  username: root
+  password: root
+redis:
+  host: "192.168.1.161"
+  port: 6379
+  password: ""
+mgdb:
+  addrs: ["127.0.0.1:27017"]
+  datebase: "b2blog"
+  source: "b2blog"
+  username: ""
+  password: ""
+  collection: "useraction"
+buswechat:
+  corpid: "xxxx"
+  agentId: "xxxxx"
+sms:
+  sdkappid: "xxxxx"
+  appkey: "xxxxxx"
+  tplid: 123456
+

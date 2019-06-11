@@ -1,0 +1,31 @@
+runmode: release               # 开发模式, debug, release, test
+port: 8084                 # HTTP绑定端口
+cert: resource/test.pem
+key: resource/test.key
+sms: 欢迎你注册，你的验证码【smscode】，有效时间2分钟
+ip : https://192.168.1.161:8084
+inviterphone : [13666668888,13555552222]
+gormlog: true
+pdfpath : D:\GoProjects\src\b2b\static\pdffiles\
+pdftemp: D:\GoProjects\src\b2b\static\temp\
+wechattouser: TanHaiYing
+db:
+  type: mysql
+  dbname: b2b
+  addr: 127.0.0.1:3306
+  #  addr: ec2-13-229-248-204.ap-southeast-1.compute.amazonaws.com:3306
+  username: root
+  password: root
+redis:
+  host: "127.0.0.1"
+  port: 6379
+  password: ""
+mgdb:
+  addrs: ["127.0.0.1:27017"]
+  datebase : "b2blog"
+  source : "b2blog"
+  username : ""
+  password : ""
+  collection : "useraction"
+
+
