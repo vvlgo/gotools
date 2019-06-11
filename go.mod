@@ -27,21 +27,7 @@ require (
 )
 
 replace (
-	cloud.google.com/go => github.com/googleapis/google-cloud-go v0.36.0
-	golang.org/x/build => github.com/golang/build v0.0.0-20190111050920-041ab4dc3f9d
-	golang.org/x/crypto => github.com/golang/crypto v0.0.0-20190325154230-a5d413f7728c
-	golang.org/x/exp => github.com/golang/exp v0.0.0-20190121172915-509febef88a4
-	golang.org/x/lint => github.com/golang/lint v0.0.0-20181026193005-c67002cb31c3
 	golang.org/x/net => github.com/golang/net v0.0.0-20180826012351-8a410e7b638d
-	golang.org/x/oauth2 => github.com/golang/oauth2 v0.0.0-20181203162652-d668ce993890
-	golang.org/x/perf => github.com/golang/perf v0.0.0-20180704124530-6e6d33e29852
-	golang.org/x/sync => github.com/golang/sync v0.0.0-20181108010431-42b317875d0f
 	golang.org/x/sys => github.com/golang/sys v0.0.0-20190403152447-81d4e9dc473e
-	golang.org/x/text => github.com/golang/text v0.3.1-0.20180807135948-17ff2d5776d2
-	golang.org/x/time => github.com/golang/time v0.0.0-20181108054448-85acf8d2951c
-	golang.org/x/tools => github.com/golang/tools v0.0.0-20181030000716-a0a13e073c7b
-	google.golang.org/api => github.com/googleapis/google-api-go-client v0.1.0
 	google.golang.org/appengine => github.com/golang/appengine v1.1.0
-	google.golang.org/genproto => github.com/google/go-genproto v0.0.0-20190201180003-4b09977fb922
-	google.golang.org/grpc => github.com/grpc/grpc-go v1.17.0
 )
