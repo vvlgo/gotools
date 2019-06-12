@@ -152,8 +152,8 @@ type LogOption struct {
 	Username      string        //如果开启安全连接，用户名
 	Password      string        //如果开启安全连接，密码
 	Collection    string        //所选表
-	Logpath       string        //日志路径 PS：logs/
-	Logname       string        //日志名字 PS：log.log
+	LogPath       string        //日志路径 PS：logs/
+	LogName       string        //日志名字 PS：log.log
 	RetentionTime time.Duration //保存时间
 	CutTime       time.Duration //切割时间
 }
@@ -166,7 +166,7 @@ func LogConf(modeType string, option *LogOption) {
 		if option.IsMgLog {
 			logrus.AddHook(MongodbHooks(option.Addrs, option.Database, option.Source, option.Username, option.Password, option.Collection))
 		} else {
-			logrus.AddHook(ConfigLocalFilesystemLogger(option.Logpath, option.Logname, option.RetentionTime*time.Hour, option.CutTime*time.Hour))
+			logrus.AddHook(ConfigLocalFilesystemLogger(option.LogPath, option.LogName, option.RetentionTime*time.Hour, option.CutTime*time.Hour))
 		}
 	}
 
