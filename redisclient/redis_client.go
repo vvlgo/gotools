@@ -2,7 +2,6 @@ package redisclient
 
 import (
 	"errors"
-	"flag"
 	"github.com/gomodule/redigo/redis"
 	"io"
 	"strings"
@@ -32,17 +31,14 @@ func newPool(addr string, password string) *redis.Pool {
 }
 
 var (
-	redisPool   *redis.Pool
-	redisServer = flag.String("127.0.0.1", ":6379", "")
+	redisPool *redis.Pool
 )
 
 /*
 RedisInit redis 初始化
 */
 func RedisInit(host, port, password string) {
-
 	redisPool = newPool(host+":"+port, password)
-
 }
 
 type MyRedisReConn struct {
