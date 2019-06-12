@@ -19,7 +19,7 @@ func Sign(s interface{}, expires time.Duration, tokenKey, tokenSecret string) (s
 	case "int":
 		ss = strconv.Itoa(s.(int))
 	}
-	expiresAt := now.Add(expires)
+	expiresAt := now.Add(expires * time.Second)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.StandardClaims{
 		Id:        ss,
 		ExpiresAt: expiresAt.Unix(),
