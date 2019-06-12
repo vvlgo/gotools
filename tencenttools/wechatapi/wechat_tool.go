@@ -15,15 +15,51 @@ import (
 )
 
 type WechatRep struct {
-	Errcode     int         `json:"errcode"`
-	Errmsg      string      `json:"errmsg"`
-	AccessToken string      `json:"access_token"`
-	Ticket      string      `json:"ticket"`
-	ExpiresIn   int         `json:"expires_in"`
-	Invaliduser string      `json:"invaliduser"`
-	Data        interface{} `json:"data"`
-	UserId      string      `json:"USERID"`
-	OpenId      string      `json:"OPENID"`
+	Errcode     int          `json:"errcode"`
+	Errmsg      string       `json:"errmsg"`
+	AccessToken string       `json:"access_token"`
+	Ticket      string       `json:"ticket"`
+	ExpiresIn   int          `json:"expires_in"`
+	Invaliduser string       `json:"invaliduser"`
+	Data        interface{}  `json:"data"`
+	UserId      string       `json:"USERID"`
+	OpenId      string       `json:"OPENID"`
+	Department  []Department `json:"department"`
+	Userlist    []User       `json:"userlist"`
+}
+
+//Department 部门表及字段
+type Department struct {
+	//企业微信字段
+	WechatID       int    `gorm:"column:wechat_id;COMMENT:'企业微信创建的部门id';"                                               form:"wechat_id"       json:"id"`
+	DepartmentName string `gorm:"column:department_name;type:varchar(50);COMMENT:'部门名字';"                                    form:"department_name" json:"name"`
+	ParentID       int    `gorm:"column:parent_id;COMMENT:'父亲部门id。根部门为1';"                                              form:"parent_id"       json:"parentid"`
+	OrderNum       int64  `gorm:"column:order_num;type:bigint;COMMENT:'在父部门中的次序值。order值大的排序靠前。值范围是[0, 2^32)';" form:"order_num"           json:"order"`
+}
+
+//User 用户字段
+type User struct {
+	//企业微信字段
+	UserID          string `gorm:"column:userid;COMMENT:'成员UserID。对应管理端的帐号';"                                              form:"userid"            json:"userid"`
+	UserName        string `gorm:"column:user_name;COMMENT:'成员名称';"                                                               form:"user_name"         json:"name"`
+	Mobile          string `gorm:"column:mobile;COMMENT:'手机号码';"                                                                  form:"mobile"            json:"mobile"`
+	WechatIDs       []int  `gorm:"-"                                                                                                                           json:"department"`
+	DeptWechatIDs   string `gorm:"column:dept_wechat_ids;COMMENT:'成员所属部门id列表，仅返回该应用有查看权限的部门id';"               form:"dept_wechat_ids"   json:"dept_wechat_ids"`
+	Position        string `gorm:"column:position;COMMENT:'职务信息；';"                                                              form:"position"          json:"position"`
+	Gender          string `gorm:"column:gender;COMMENT:'性别。0表示未定义，1表示男性，2表示女性';"                                   form:"gender"            json:"gender"`
+	Email           string `gorm:"column:email;COMMENT:'邮箱';"                                                                       form:"email"             json:"email"`
+	Avatar          string `gorm:"column:avatar;COMMENT:'头像url。注：如果要获取小图将url最后的”/0”改成”/100”即可';"              form:"avatar"            json:"avatar"`
+	Status          int    `gorm:"column:status;COMMENT:'激活状态: 1=已激活，2=已禁用，4=未激活';"                                    form:"status"            json:"status"`
+	Enable          int    `gorm:"column:enable;COMMENT:'成员启用状态。1表示启用的成员，0表示被禁用。服务商调用接口不会返回此字段';"  form:"enable"            json:"enable"`
+	Isleader        int    `gorm:"column:isleader;COMMENT:'无';"                                                                      form:"isleader"          json:"isleader"`
+	HideMobile      int    `gorm:"column:hide_mobile;COMMENT:'无';"                                                                   form:"hide_mobile"       json:"hide_mobile"`
+	Telephone       string `gorm:"column:telephone;COMMENT:'座机';"                                                                   form:"telephone"         json:"telephone"`
+	Order           []int  `gorm:"-"                                                                                                                           json:"order"`
+	Orders          string `gorm:"column:orders;COMMENT:'部门内的排序值，32位整数，默认为0';"                                       form:"orders"         json:"orders"`
+	QrCode          string `gorm:"column:qr_code;COMMENT:'员工个人二维码，扫描可添加为外部联系人';"                                   form:"qr_code"           json:"qr_code"`
+	Alias           string `gorm:"column:alias;COMMENT:'别名';"                                                                       form:"alias"             json:"alias"`
+	IsLeaderInDept  []int  `gorm:"-"                                                                                                                           json:"is_leader_in_dept"`
+	IsLeaderInDepts string `gorm:"column:is_leader_in_depts;COMMENT:'表示在所在的部门内是否为上级';"                                   form:"is_leader_in_depts" json:"is_leader_in_depts"`
 }
 
 type WechatMsg struct {
