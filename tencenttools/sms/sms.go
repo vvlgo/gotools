@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gomodule/redigo/redis"
-	log "github.com/sirupsen/logrus"
 	"github.com/vvlgo/gotools/httptool"
 	"github.com/vvlgo/gotools/redisclient"
 	"math/rand"
@@ -56,7 +55,7 @@ tplId 腾讯短信模板id,控制台查看
 redisConnSms redis连接对象,缓存短信验证码的库
 redisConnPhoneCount redis连接对象,统计电话请求次数的库
 */
-func SendSms(phone, sdkappid, appkey string, tplId int, redisConnSms redisclient.MyRedisReConn, smsCodeExpiresTime int, redisConnPhoneCount redisclient.MyRedisReConn, phoneCountExpiresTime int) (bool, error) {
+func SendSms(phone, sdkappid, appkey, sigin string, tplId int, redisConnSms redisclient.MyRedisReConn, smsCodeExpiresTime int, redisConnPhoneCount redisclient.MyRedisReConn, phoneCountExpiresTime int) (bool, error) {
 	code := CreateSmsCode()
 	unix := time.Now().Unix()
 	var url1 = `https://yun.tim.qq.com/v5/tlssmssvr/sendsms?sdkappid=` + sdkappid + `&random=` + code
@@ -67,25 +66,21 @@ func SendSms(phone, sdkappid, appkey string, tplId int, redisConnSms redisclient
 	smsRe.Tel.Nationcode = "86"
 	smsRe.Time = unix
 	smsRe.TplId = tplId
+	smsRe.Sign = sigin
 	smsRe.Sig = sig(smsRe.Tel.Mobile, appkey, code, strconv.FormatInt(unix, 10))
-	body := httptool.POST(url1, nil, smsRe)
+	body, err := httptool.POST(url1, nil, smsRe)
 	re := SmsResult{}
-	err := json.Unmarshal([]byte(body), &re)
+	err = json.Unmarshal([]byte(body), &re)
 	if err != nil {
-		log.Error("获取的数据转json错误,", err)
 		return false, err
 	}
 	if re.Result == 0 && re.Errmsg == "ok" {
-		marshal, _ := json.Marshal(re)
-		log.Info("发送短信成功,", string(marshal))
 		_, err = redisConnSms.Redo("Set", phone, code, "EX", smsCodeExpiresTime)
 		if err != nil {
-			log.Info("发送短信成功,存储验证码redis异常", err)
 			return false, err
 		}
 		err = RecordPhoneUseNums(phone, redisConnPhoneCount, phoneCountExpiresTime)
 		if err != nil {
-			log.Info("发送短信成功,记录手机redis异常", err)
 			return false, err
 		}
 		return true, nil

@@ -2,8 +2,8 @@ package example_test
 
 import (
 	"fmt"
-	"github.com/vvlgo/CommonTools/redisclient"
-	"github.com/vvlgo/CommonTools/tencenttools/sms"
+	"github.com/vvlgo/gotools/redisclient"
+	"github.com/vvlgo/gotools/tencenttools/sms"
 	"testing"
 )
 
@@ -22,7 +22,7 @@ func TestSms(t *testing.T) {
 		panic(err)
 	}
 	var phone = "13628005220"
-	b, err := sms.SendSms(phone, sdkappid, appkey, tpl_id, *reConn0, 60, *reConn1, 60*60)
+	b, err := sms.SendSms(phone, sdkappid, appkey, "", tpl_id, *reConn0, 60, *reConn1, 60*60)
 	if err != nil {
 		panic(err)
 	}

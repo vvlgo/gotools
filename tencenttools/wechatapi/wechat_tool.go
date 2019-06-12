@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gomodule/redigo/redis"
-	log "github.com/sirupsen/logrus"
 	"github.com/vvlgo/gotools/httptool"
 	"github.com/vvlgo/gotools/redisclient"
 	"github.com/vvlgo/gotools/tencenttools/sms"
@@ -54,26 +53,27 @@ type Signature struct {
 GetAccessToken 企业微信获取AccessToken
 redisConn AccessToken缓存库
 */
-func GetAccessToken(corpid string, redisConn redisclient.MyRedisReConn) string {
+func GetAccessToken(corpid string, redisConn redisclient.MyRedisReConn) (string, error) {
 
 	code, _ := redis.String(redisConn.Redo("Get", "access_token"))
 	if code != "" {
-		return code
+		return code, nil
 	} else {
 		url1 := "https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=" + corpid + "&corpsecret=aehiE0og9IpDOBG-eKYgSGJA_lClwLgZJ8BQHbPUBOQ"
-		resp := httptool.GET(url1, nil)
-		re := WechatRep{}
-		err := json.Unmarshal([]byte(resp), &re)
+		resp, err := httptool.GET(url1, nil)
 		if err != nil {
-			log.Error("获取的数据转json错误,", err)
-			return ""
+			return "", err
+		}
+		re := WechatRep{}
+		err = json.Unmarshal([]byte(resp), &re)
+		if err != nil {
+			return "", err
 		}
 		_, err = redisConn.Redo("Set", "access_token", re.AccessToken, "EX", re.ExpiresIn)
 		if err != nil {
-			log.Error("redis connect err,", err)
-			return ""
+			return "", err
 		}
-		return re.AccessToken
+		return re.AccessToken, nil
 	}
 
 }
@@ -82,31 +82,35 @@ func GetAccessToken(corpid string, redisConn redisclient.MyRedisReConn) string {
 GetAppTicket 企业微信获取AppTicket
 redisConn AppTicket缓存库，和AccessToken同库
 */
-func GetAppTicket(corpid string, redisConn redisclient.MyRedisReConn) string {
+func GetAppTicket(corpid string, redisConn redisclient.MyRedisReConn) (string, error) {
 
 	ticket, _ := redis.String(redisConn.Redo("Get", "appticket"))
 	if ticket != "" {
-		return ticket
+		return ticket, nil
 	} else {
 		url3 := ""
-		accessToken := GetAccessToken(corpid, redisConn)
+		accessToken, err := GetAccessToken(corpid, redisConn)
+		if err != nil {
+			return "", err
+		}
 		if accessToken != "" {
 			url3 = url3 + "https://qyapi.weixin.qq.com/cgi-bin/ticket/get?access_token=" + accessToken + "&type=agent_config"
-			resp := httptool.GET(url3, nil)
-			re := WechatRep{}
-			err := json.Unmarshal([]byte(resp), &re)
+			resp, err := httptool.GET(url3, nil)
 			if err != nil {
-				log.Error("获取的数据转json错误,", err)
-				return ""
+				return "", err
+			}
+			re := WechatRep{}
+			err = json.Unmarshal([]byte(resp), &re)
+			if err != nil {
+				return "", err
 			}
 			_, err = redisConn.Redo("Set", "appticket", re.Ticket, "EX", re.ExpiresIn)
 			if err != nil {
-				log.Error("redis connect err,", err)
-				return ""
+				return "", err
 			}
-			return re.Ticket
+			return re.Ticket, nil
 		}
-		return ""
+		return "", err
 	}
 }
 
@@ -114,36 +118,43 @@ func GetAppTicket(corpid string, redisConn redisclient.MyRedisReConn) string {
 GetBusiTicket 企业微信获取BusiTicket
 redisConn BusiTicket缓存库，和AccessToken同库
 */
-func GetBusiTicket(corpid string, redisConn redisclient.MyRedisReConn) string {
+func GetBusiTicket(corpid string, redisConn redisclient.MyRedisReConn) (string, error) {
 	ticket, _ := redis.String(redisConn.Redo("Get", "busiticket"))
 	if ticket != "" {
-		return ticket
+		return ticket, nil
 	} else {
 		url3 := ""
-		accessToken := GetAccessToken(corpid, redisConn)
+		accessToken, err := GetAccessToken(corpid, redisConn)
 		if accessToken != "" {
 			url3 = url3 + "https://qyapi.weixin.qq.com/cgi-bin/get_jsapi_ticket?access_token=" + accessToken
-			resp := httptool.GET(url3, nil)
-			re := WechatRep{}
-			err := json.Unmarshal([]byte(resp), &re)
+			resp, err := httptool.GET(url3, nil)
 			if err != nil {
-				log.Error("获取的数据转json错误,", err)
-				return ""
+				return "", err
+			}
+			re := WechatRep{}
+			err = json.Unmarshal([]byte(resp), &re)
+			if err != nil {
+				return "", err
 			}
 			_, err = redisConn.Redo("Set", "busiticket", re.Ticket, "EX", re.ExpiresIn)
 			if err != nil {
-				log.Error("redis connect err,", err)
-				return ""
+				return "", err
 			}
-			return re.Ticket
+			return re.Ticket, nil
 		}
-		return ""
+		return "", err
 	}
 }
 
-func GetSignature(url, corpid, agentId string, redisConn redisclient.MyRedisReConn) *Signature {
-	appticket := GetAppTicket(corpid, redisConn)
-	busiticket := GetBusiTicket(corpid, redisConn)
+func GetSignature(url, corpid, agentId string, redisConn redisclient.MyRedisReConn) (*Signature, error) {
+	appticket, err := GetAppTicket(corpid, redisConn)
+	if err != nil {
+		return nil, err
+	}
+	busiticket, err := GetBusiTicket(corpid, redisConn)
+	if err != nil {
+		return nil, err
+	}
 	noncestr := sms.CreateSmsCode()
 	unix := time.Now().Unix()
 	timestamp := strconv.FormatInt(unix, 10)
@@ -168,9 +179,9 @@ func GetSignature(url, corpid, agentId string, redisConn redisclient.MyRedisReCo
 		signature.BusiSignature = i2
 		signature.Noncestr = noncestr
 		signature.Timestamp = unix
-		return &signature
+		return &signature, nil
 	}
-	return nil
+	return nil, err
 }
 func Sha1(data []byte) string {
 	sha1 := sha1.New()
@@ -182,11 +193,11 @@ func Sha1(data []byte) string {
 SendMsg 发送审核信息到企业微信,，卡片信息
 模板根据自己情景修改
 */
-func SendMsg(orderUrl, toUser, corpid, title, cardInfo string, agentid int, redisConn redisclient.MyRedisReConn) bool {
+func SendMsg(orderUrl, toUser, corpid, title, cardInfo string, agentid int, redisConn redisclient.MyRedisReConn) (bool, error) {
 	url2 := "https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token="
-	accessToken := GetAccessToken(corpid, redisConn)
+	accessToken, err := GetAccessToken(corpid, redisConn)
 	if accessToken == "" {
-		return false
+		return false, err
 	} else {
 		url2 = url2 + accessToken
 	}
@@ -199,15 +210,17 @@ func SendMsg(orderUrl, toUser, corpid, title, cardInfo string, agentid int, redi
 	wechatMsg.Textcard.Description = cardInfo
 	wechatMsg.Textcard.Url = orderUrl
 	wechatMsg.Textcard.Btntxt = "更多"
-	body := httptool.POST(url2, nil, wechatMsg)
-	re := WechatRep{}
-	err := json.Unmarshal([]byte(body), &re)
+	body, err := httptool.POST(url2, nil, wechatMsg)
 	if err != nil {
-		log.Error("获取的数据转json错误,", err)
-		return false
+		return false, err
+	}
+	re := WechatRep{}
+	err = json.Unmarshal([]byte(body), &re)
+	if err != nil {
+		return false, err
 	}
 	if re.Errcode == 0 && re.Errmsg == "ok" {
-		return true
+		return true, nil
 	}
-	return false
+	return false, err
 }

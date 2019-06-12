@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 )
@@ -12,7 +11,7 @@ import (
 /*
 GET httptool.GET
 */
-func GET(url string, params map[string]string) []byte {
+func GET(url string, params map[string]string) ([]byte, error) {
 	if params != nil {
 		var i = 0
 		for k, v := range params {
@@ -28,22 +27,20 @@ func GET(url string, params map[string]string) []byte {
 	client := http.Client{}
 	resp, err := client.Get(url)
 	if err != nil {
-		log.Error("request get err,", err)
-		return nil
+		return nil, err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Error("get read body err,", err)
-		return nil
+		return nil, err
 	}
-	return body
+	return body, nil
 }
 
 /*
 POST httptool.POST
 */
-func POST(url string, params map[string]string, data interface{}) []byte {
+func POST(url string, params map[string]string, data interface{}) ([]byte, error) {
 	if params != nil {
 		var i = 0
 		for k, v := range params {
@@ -62,15 +59,13 @@ func POST(url string, params map[string]string, data interface{}) []byte {
 	request.Header.Set("Connection", "Keep-Alive")
 	response, err := client.Do(request)
 	if err != nil {
-		log.Error("request post err,", err)
-		return nil
+
+		return nil, err
 	}
 	body, err := ioutil.ReadAll(response.Body)
 	defer response.Body.Close()
 	if err != nil {
-		log.Error("post read body err,", err)
-		return nil
+		return nil, err
 	}
-
-	return body
+	return body, nil
 }

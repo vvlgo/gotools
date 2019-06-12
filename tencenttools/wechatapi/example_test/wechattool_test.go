@@ -16,12 +16,12 @@ func TestWechtTools(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	accessToken := wechatapi.GetAccessToken(corpid, *reConn)
+	accessToken, _ := wechatapi.GetAccessToken(corpid, *reConn)
 	fmt.Println(accessToken)
 
-	busiTicket := wechatapi.GetBusiTicket(corpid, *reConn)
+	busiTicket, _ := wechatapi.GetBusiTicket(corpid, *reConn)
 	fmt.Println(busiTicket)
 
-	appTicket := wechatapi.GetAppTicket(corpid, *reConn)
+	appTicket, _ := wechatapi.GetAppTicket(corpid, *reConn)
 	fmt.Println(appTicket)
 }
