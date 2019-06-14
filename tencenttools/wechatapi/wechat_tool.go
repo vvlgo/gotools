@@ -255,7 +255,7 @@ func SendMsg(orderUrl, toUser, corpid, title, cardInfo string, agentid int, redi
 	if err != nil {
 		return false, err
 	}
-	if re.Errcode == 0 && re.Errmsg == "ok" {
+	if re.Errcode == 0 && (re.Errmsg == "OK" || re.Errmsg == "ok") {
 		return true, nil
 	}
 	return false, err
