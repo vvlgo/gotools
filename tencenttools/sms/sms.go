@@ -74,7 +74,7 @@ func SendSms(phone, sdkappid, appkey, sigin string, tplId int, redisConnSms redi
 	if err != nil {
 		return false, err
 	}
-	if re.Result == 0 && re.Errmsg == "ok" {
+	if re.Result == 0 && re.Errmsg == "OK" {
 		_, err = redisConnSms.Redo("Set", phone, code, "EX", smsCodeExpiresTime)
 		if err != nil {
 			return false, err
