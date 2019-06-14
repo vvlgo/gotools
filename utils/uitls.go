@@ -8,6 +8,7 @@ import (
 	"github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/gomail.v2"
+	"math/rand"
 	"os"
 	"reflect"
 	"strconv"
@@ -252,4 +253,50 @@ func GetUUID(deviceId, offerCode string) string {
 	s := ss[0] + ss[1]
 
 	return s[:10]
+}
+
+/*
+TimeToDate 输入时间，结果xxxx-xx-xx
+*/
+func TimeToDate(date time.Time) string {
+	return date.Format("2006-01-02")
+}
+
+/*
+TimeToTimestamp 输入时间，结果xxxx-xx-xx xx:xx:xx:
+*/
+func TimeToTimestamp(date time.Time) string {
+	return date.Format("2006-01-02 15:04:05")
+}
+
+/*
+GetOrderNum 计算订单号，订单号格式yyyymmddDDmmss+电话后四位+5位随机数
+*/
+func GetOrderNum(phone string) string {
+	ntime := time.Now()
+	s := ntime.Format("20060102150405")
+	phone = phone[7:]
+	s = s + phone
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	var result = ""
+	for i := 0; i < 5; i++ {
+		result += strconv.Itoa(r.Intn(10))
+	}
+	s = s + result
+	return s
+}
+
+/*
+CreateDir 创建文件夹
+*/
+func CreateDir(dir string) error {
+	b, _ := PathExists(dir)
+	if !b {
+		err := os.Mkdir(dir, 07777)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return nil
 }
