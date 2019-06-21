@@ -89,13 +89,13 @@ type Signature struct {
 GetAccessToken 企业微信获取AccessToken
 redisConn AccessToken缓存库
 */
-func GetAccessToken(corpid string, redisConn redisclient.MyRedisReConn) (string, error) {
+func GetAccessToken(corpid, corpsecret string, redisConn redisclient.MyRedisReConn) (string, error) {
 
 	code, _ := redis.String(redisConn.Redo("Get", "access_token"))
 	if code != "" {
 		return code, nil
 	} else {
-		url1 := "https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=" + corpid + "&corpsecret=aehiE0og9IpDOBG-eKYgSGJA_lClwLgZJ8BQHbPUBOQ"
+		url1 := "https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=" + corpid + "&corpsecret=" + corpsecret
 		resp, err := httptool.GET(url1, nil)
 		if err != nil {
 			return "", err
@@ -118,14 +118,14 @@ func GetAccessToken(corpid string, redisConn redisclient.MyRedisReConn) (string,
 GetAppTicket 企业微信获取AppTicket
 redisConn AppTicket缓存库，和AccessToken同库
 */
-func GetAppTicket(corpid string, redisConn redisclient.MyRedisReConn) (string, error) {
+func GetAppTicket(corpid, corpsecret string, redisConn redisclient.MyRedisReConn) (string, error) {
 
 	ticket, _ := redis.String(redisConn.Redo("Get", "appticket"))
 	if ticket != "" {
 		return ticket, nil
 	} else {
 		url3 := ""
-		accessToken, err := GetAccessToken(corpid, redisConn)
+		accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
 		if err != nil {
 			return "", err
 		}
@@ -154,13 +154,13 @@ func GetAppTicket(corpid string, redisConn redisclient.MyRedisReConn) (string, e
 GetBusiTicket 企业微信获取BusiTicket
 redisConn BusiTicket缓存库，和AccessToken同库
 */
-func GetBusiTicket(corpid string, redisConn redisclient.MyRedisReConn) (string, error) {
+func GetBusiTicket(corpid, corpsecret string, redisConn redisclient.MyRedisReConn) (string, error) {
 	ticket, _ := redis.String(redisConn.Redo("Get", "busiticket"))
 	if ticket != "" {
 		return ticket, nil
 	} else {
 		url3 := ""
-		accessToken, err := GetAccessToken(corpid, redisConn)
+		accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
 		if accessToken != "" {
 			url3 = url3 + "https://qyapi.weixin.qq.com/cgi-bin/get_jsapi_ticket?access_token=" + accessToken
 			resp, err := httptool.GET(url3, nil)
@@ -182,12 +182,12 @@ func GetBusiTicket(corpid string, redisConn redisclient.MyRedisReConn) (string, 
 	}
 }
 
-func GetSignature(url, corpid, agentId string, redisConn redisclient.MyRedisReConn) (*Signature, error) {
-	appticket, err := GetAppTicket(corpid, redisConn)
+func GetSignature(url, corpid, corpsecret, agentId string, redisConn redisclient.MyRedisReConn) (*Signature, error) {
+	appticket, err := GetAppTicket(corpid, corpsecret, redisConn)
 	if err != nil {
 		return nil, err
 	}
-	busiticket, err := GetBusiTicket(corpid, redisConn)
+	busiticket, err := GetBusiTicket(corpid, corpsecret, redisConn)
 	if err != nil {
 		return nil, err
 	}
@@ -229,9 +229,9 @@ func Sha1(data []byte) string {
 SendMsg 发送审核信息到企业微信,，卡片信息
 模板根据自己情景修改
 */
-func SendMsg(orderUrl, toUser, corpid, title, cardInfo string, agentid int, redisConn redisclient.MyRedisReConn) (bool, error) {
+func SendMsg(orderUrl, toUser, corpid, corpsecret, title, cardInfo string, agentid int, redisConn redisclient.MyRedisReConn) (bool, error) {
 	url2 := "https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token="
-	accessToken, err := GetAccessToken(corpid, redisConn)
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
 	if accessToken == "" {
 		return false, err
 	} else {
