@@ -1,13 +1,15 @@
 package example_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/vvlgo/gotools/redisclient"
 	"github.com/vvlgo/gotools/tencenttools/wechatapi"
 	"testing"
 )
 
-const corpid = "xxxxxxxxxxx"
+const corpid = "xxxxxxxxx"
+const corpsecret = "xxxxxxxxxxxxx"
 const agentId = "100000000"
 
 func TestWechtTools(t *testing.T) {
@@ -16,12 +18,18 @@ func TestWechtTools(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	accessToken, _ := wechatapi.GetAccessToken(corpid, *reConn)
+	accessToken, _ := wechatapi.GetAccessToken(corpid, corpsecret, *reConn)
 	fmt.Println(accessToken)
 
-	busiTicket, _ := wechatapi.GetBusiTicket(corpid, *reConn)
+	busiTicket, _ := wechatapi.GetBusiTicket(corpid, corpsecret, *reConn)
 	fmt.Println(busiTicket)
 
-	appTicket, _ := wechatapi.GetAppTicket(corpid, *reConn)
+	appTicket, _ := wechatapi.GetAppTicket(corpid, corpsecret, *reConn)
 	fmt.Println(appTicket)
+
+	user, err := wechatapi.GetUserByUserID(corpid, corpsecret, "WeiTao", *reConn)
+	bytes, err := json.Marshal(user)
+	mp := make(map[string]interface{})
+	json.Unmarshal(bytes, &mp)
+	fmt.Println(mp)
 }

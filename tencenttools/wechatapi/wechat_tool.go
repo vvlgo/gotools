@@ -15,17 +15,18 @@ import (
 )
 
 type WechatRep struct {
-	Errcode     int          `json:"errcode"`
-	Errmsg      string       `json:"errmsg"`
-	AccessToken string       `json:"access_token"`
-	Ticket      string       `json:"ticket"`
-	ExpiresIn   int          `json:"expires_in"`
-	Invaliduser string       `json:"invaliduser"`
-	Data        interface{}  `json:"data"`
-	UserId      string       `json:"USERID"`
-	OpenId      string       `json:"OPENID"`
-	Department  []Department `json:"department"`
-	Userlist    []User       `json:"userlist"`
+	Errcode      int          `json:"errcode"`
+	Errmsg       string       `json:"errmsg"`
+	AccessToken  string       `json:"access_token"`
+	Ticket       string       `json:"ticket"`
+	ExpiresIn    int          `json:"expires_in"`
+	Invaliduser  string       `json:"invaliduser"`
+	Data         interface{}  `json:"data"`
+	UserId       string       `json:"USERID"`
+	OpenId       string       `json:"OPENID"`
+	DepartmentID int          `json:"id"`
+	Department   []Department `json:"department"`
+	Userlist     []User       `json:"userlist"`
 }
 
 //Department 部门表及字段
@@ -39,6 +40,8 @@ type Department struct {
 
 //User 用户字段
 type User struct {
+	Errcode int    `json:"errcode"`
+	Errmsg  string `json:"errmsg"`
 	//企业微信字段
 	UserID          string `gorm:"column:userid;COMMENT:'成员UserID。对应管理端的帐号';"                                              form:"userid"            json:"userid"`
 	UserName        string `gorm:"column:user_name;COMMENT:'成员名称';"                                                               form:"user_name"         json:"name"`
@@ -83,6 +86,27 @@ type Signature struct {
 	BusiSignature string `json:"busi_signature"`
 	Noncestr      string `json:"nonceStr"`
 	Timestamp     int64  `json:"timestamp"`
+}
+
+//企业微信人员请求对应字段
+type RequestUser struct {
+	UserID         string `json:"userid"`
+	UserName       string `json:"name"`
+	Alias          string `json:"alias"`
+	Mobile         string `json:"mobile"`
+	Department     []int  `json:"department"`
+	Position       string `json:"position"`
+	Gender         string `json:"gender"`
+	Email          string `json:"email"`
+	IsLeaderInDept []int  `json:"is_leader_in_dept"`
+	Enable         int    `json:"enable"`
+}
+
+//企业微信部门请求对应字段
+type RequestDepartment struct {
+	Department   string `json:"name"`
+	ParentID     int    `json:"parentid"`
+	DepartmentID int    `json:"id"`
 }
 
 /*
@@ -256,6 +280,302 @@ func SendMsg(orderUrl, toUser, corpid, corpsecret, title, cardInfo string, agent
 		return false, err
 	}
 	if re.Errcode == 0 && (re.Errmsg == "OK" || re.Errmsg == "ok") {
+		return true, nil
+	}
+	return false, err
+}
+
+/*
+GetUserByCode 企业微信获取用户基础数据
+redisConn AccessToken缓存库
+*/
+func GetUserByCode(corpid, corpsecret, code string, redisConn redisclient.MyRedisReConn) (*WechatRep, error) {
+	codeUrl := "https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token=ACCESS_TOKEN&code=CODE"
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	if accessToken == "" {
+		return nil, err
+	}
+	codeUrl = strings.ReplaceAll(codeUrl, "ACCESS_TOKEN", accessToken)
+	codeUrl = strings.ReplaceAll(codeUrl, "CODE", code)
+	res, err := httptool.GET(codeUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+	re := WechatRep{}
+	err = json.Unmarshal(res, &re)
+	if err != nil {
+		return nil, err
+	}
+	if re.Errcode == 0 && (re.Errmsg == "OK" || re.Errmsg == "ok") {
+		return &re, nil
+	}
+	return nil, err
+}
+
+/*
+GetUserByUserID 企业微信获取用户详细信息数据
+redisConn AccessToken缓存库
+*/
+func GetUserByUserID(corpid, corpsecret, userid string, redisConn redisclient.MyRedisReConn) (*User, error) {
+	userUrl := "https://qyapi.weixin.qq.com/cgi-bin/user/get?access_token=ACCESS_TOKEN&userid=USERID"
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	if accessToken == "" {
+		return nil, err
+	}
+	userUrl = strings.ReplaceAll(userUrl, "ACCESS_TOKEN", accessToken)
+	userUrl = strings.ReplaceAll(userUrl, "USERID", userid)
+	res, err := httptool.GET(userUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+	re := User{}
+	err = json.Unmarshal(res, &re)
+	if err != nil {
+		return nil, err
+	}
+	if re.Errcode == 0 && (re.Errmsg == "OK" || re.Errmsg == "ok") {
+		return &re, nil
+	}
+	return nil, err
+}
+
+/*
+GetDepartmentList 企业微信获取所有部门数据
+redisConn AccessToken缓存库
+*/
+func GetDepartmentList(corpid, corpsecret, userid string, redisConn redisclient.MyRedisReConn) (*WechatRep, error) {
+	Url := "https://qyapi.weixin.qq.com/cgi-bin/department/list"
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	if accessToken == "" {
+		return nil, err
+	}
+	params := make(map[string]string)
+	params["access_token"] = accessToken
+	res, err := httptool.GET(Url, params)
+	if err != nil {
+		return nil, err
+	}
+	re := WechatRep{}
+	err = json.Unmarshal(res, &re)
+	if err != nil {
+		return nil, err
+	}
+	if re.Errcode == 0 && (re.Errmsg == "OK" || re.Errmsg == "ok") {
+		return &re, nil
+	}
+	return nil, err
+}
+
+/*
+GetDepartmentUserList 企业微信获取部门人员信息数据
+redisConn AccessToken缓存库
+*/
+func GetDepartmentUserList(corpid, corpsecret, departmenID string, redisConn redisclient.MyRedisReConn) (*WechatRep, error) {
+	Url := "https://qyapi.weixin.qq.com/cgi-bin/user/list"
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	if accessToken == "" {
+		return nil, err
+	}
+	params := make(map[string]string)
+	params["access_token"] = accessToken
+	params["department_id"] = departmenID
+	params["fetch_child"] = "1"
+	res, err := httptool.GET(Url, params)
+	if err != nil {
+		return nil, err
+	}
+	re := WechatRep{}
+	err = json.Unmarshal(res, &re)
+	if err != nil {
+		return nil, err
+	}
+	if re.Errcode == 0 && (re.Errmsg == "OK" || re.Errmsg == "ok") {
+		return &re, nil
+	}
+	return nil, err
+}
+
+/*
+AddUser 企业微信新增成员
+redisConn AccessToken缓存库
+*/
+func AddUser(corpid, corpsecret string, user RequestUser, redisConn redisclient.MyRedisReConn) (bool, error) {
+	UrL := "https://qyapi.weixin.qq.com/cgi-bin/user/create?access_token=ACCESS_TOKEN"
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	if accessToken == "" {
+		return false, err
+	}
+	UrL = strings.ReplaceAll(UrL, "ACCESS_TOKEN", accessToken)
+	res, err := httptool.POST(UrL, nil, user)
+	if err != nil {
+		return false, err
+	}
+	re := WechatRep{}
+	err = json.Unmarshal(res, &re)
+	if err != nil {
+		return false, err
+	}
+	if re.Errcode == 0 && (re.Errmsg == "CREATED" || re.Errmsg == "created") {
+		return true, nil
+	}
+	return false, err
+}
+
+/*
+UpdateUser 企业微信更新成员
+redisConn AccessToken缓存库
+*/
+func UpdateUser(corpid, corpsecret string, user RequestUser, redisConn redisclient.MyRedisReConn) (bool, error) {
+	UrL := "https://qyapi.weixin.qq.com/cgi-bin/user/update?access_token=ACCESS_TOKEN"
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	if accessToken == "" {
+		return false, err
+	}
+	UrL = strings.ReplaceAll(UrL, "ACCESS_TOKEN", accessToken)
+	res, err := httptool.POST(UrL, nil, user)
+	if err != nil {
+		return false, err
+	}
+	re := WechatRep{}
+	err = json.Unmarshal(res, &re)
+	if err != nil {
+		return false, err
+	}
+	if re.Errcode == 0 && (re.Errmsg == "UPDATED" || re.Errmsg == "updated") {
+		return true, nil
+	}
+	return false, err
+}
+
+/*
+DelUser 企业微信删除成员
+redisConn AccessToken缓存库
+*/
+func DelUser(corpid, corpsecret, userID string, redisConn redisclient.MyRedisReConn) (bool, error) {
+	UrL := "https://qyapi.weixin.qq.com/cgi-bin/user/delete?access_token=ACCESS_TOKEN&userid=USERID"
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	if accessToken == "" {
+		return false, err
+	}
+	UrL = strings.ReplaceAll(UrL, "ACCESS_TOKEN", accessToken)
+	UrL = strings.ReplaceAll(UrL, "USERID", userID)
+	res, err := httptool.GET(UrL, nil)
+	if err != nil {
+		return false, err
+	}
+	re := WechatRep{}
+	err = json.Unmarshal(res, &re)
+	if err != nil {
+		return false, err
+	}
+	if re.Errcode == 0 && (re.Errmsg == "DELETED" || re.Errmsg == "deleted") {
+		return true, nil
+	}
+	return false, err
+}
+
+/*
+DelUserList 企业微信批量删除成员
+redisConn AccessToken缓存库
+*/
+func DelUserList(corpid, corpsecret string, userList []string, redisConn redisclient.MyRedisReConn) (bool, error) {
+	UrL := "https://qyapi.weixin.qq.com/cgi-bin/user/batchdelete?access_token=ACCESS_TOKEN"
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	if accessToken == "" {
+		return false, err
+	}
+	UrL = strings.ReplaceAll(UrL, "ACCESS_TOKEN", accessToken)
+	data := make(map[string][]string)
+	data["useridlist"] = userList
+	res, err := httptool.POST(UrL, nil, data)
+	if err != nil {
+		return false, err
+	}
+	re := WechatRep{}
+	err = json.Unmarshal(res, &re)
+	if err != nil {
+		return false, err
+	}
+	if re.Errcode == 0 && (re.Errmsg == "DELETED" || re.Errmsg == "deleted") {
+		return true, nil
+	}
+	return false, err
+}
+
+/*
+AddDepartment 企业微信新增部门
+redisConn AccessToken缓存库
+*/
+func AddDepartment(corpid, corpsecret string, dep Department, redisConn redisclient.MyRedisReConn) (bool, error) {
+	UrL := "https://qyapi.weixin.qq.com/cgi-bin/department/create?access_token=ACCESS_TOKEN"
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	if accessToken == "" {
+		return false, err
+	}
+	UrL = strings.ReplaceAll(UrL, "ACCESS_TOKEN", accessToken)
+	res, err := httptool.POST(UrL, nil, dep)
+	if err != nil {
+		return false, err
+	}
+	re := WechatRep{}
+	err = json.Unmarshal(res, &re)
+	if err != nil {
+		return false, err
+	}
+	if re.Errcode == 0 && (re.Errmsg == "CREATED" || re.Errmsg == "created") {
+		return true, nil
+	}
+	return false, err
+}
+
+/*
+UpdateDepartment 企业微信更新部门
+redisConn AccessToken缓存库
+*/
+func UpdateDepartment(corpid, corpsecret string, dep Department, redisConn redisclient.MyRedisReConn) (bool, error) {
+	UrL := "https://qyapi.weixin.qq.com/cgi-bin/department/update?access_token=ACCESS_TOKEN"
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	if accessToken == "" {
+		return false, err
+	}
+	UrL = strings.ReplaceAll(UrL, "ACCESS_TOKEN", accessToken)
+	res, err := httptool.POST(UrL, nil, dep)
+	if err != nil {
+		return false, err
+	}
+	re := WechatRep{}
+	err = json.Unmarshal(res, &re)
+	if err != nil {
+		return false, err
+	}
+	if re.Errcode == 0 && (re.Errmsg == "UPDATED" || re.Errmsg == "updated") {
+		return true, nil
+	}
+	return false, err
+}
+
+/*
+DelDepartment 企业微信删除部门
+redisConn AccessToken缓存库
+*/
+func DelDepartment(corpid, corpsecret, departmenID string, redisConn redisclient.MyRedisReConn) (bool, error) {
+	UrL := "https://qyapi.weixin.qq.com/cgi-bin/department/delete?access_token=ACCESS_TOKEN&id=ID"
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	if accessToken == "" {
+		return false, err
+	}
+	UrL = strings.ReplaceAll(UrL, "ACCESS_TOKEN", accessToken)
+	UrL = strings.ReplaceAll(UrL, "ID", departmenID)
+	res, err := httptool.GET(UrL, nil)
+	if err != nil {
+		return false, err
+	}
+	re := WechatRep{}
+	err = json.Unmarshal(res, &re)
+	if err != nil {
+		return false, err
+	}
+	if re.Errcode == 0 && (re.Errmsg == "DELETED" || re.Errmsg == "deleted") {
 		return true, nil
 	}
 	return false, err
