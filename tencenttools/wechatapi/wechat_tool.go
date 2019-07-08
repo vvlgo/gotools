@@ -506,26 +506,26 @@ func DelUserList(corpid, corpsecret string, userList []string, redisConn rediscl
 AddDepartment 企业微信新增部门
 redisConn AccessToken缓存库
 */
-func AddDepartment(corpid, corpsecret string, dep Department, redisConn redisclient.MyRedisReConn) (bool, error) {
+func AddDepartment(corpid, corpsecret string, dep Department, redisConn redisclient.MyRedisReConn) (id int, err error) {
 	UrL := "https://qyapi.weixin.qq.com/cgi-bin/department/create?access_token=ACCESS_TOKEN"
 	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
 	if accessToken == "" {
-		return false, err
+		return -1, err
 	}
 	UrL = strings.ReplaceAll(UrL, "ACCESS_TOKEN", accessToken)
 	res, err := httptool.POST(UrL, nil, dep)
 	if err != nil {
-		return false, err
+		return -1, err
 	}
 	re := WechatRep{}
 	err = json.Unmarshal(res, &re)
 	if err != nil {
-		return false, err
+		return -1, err
 	}
 	if re.Errcode == 0 && (re.Errmsg == "CREATED" || re.Errmsg == "created") {
-		return true, nil
+		return re.DepartmentID, nil
 	}
-	return false, err
+	return -1, err
 }
 
 /*
