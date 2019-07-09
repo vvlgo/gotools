@@ -90,23 +90,23 @@ type Signature struct {
 
 //企业微信人员请求对应字段
 type RequestUser struct {
-	UserID         string `json:"userid"`
-	UserName       string `json:"name"`
-	Alias          string `json:"alias"`
-	Mobile         string `json:"mobile"`
-	Department     []int  `json:"department"`
-	Position       string `json:"position"`
-	Gender         string `json:"gender"`
-	Email          string `json:"email"`
-	IsLeaderInDept []int  `json:"is_leader_in_dept"`
-	Enable         int    `json:"enable"`
+	UserID         string `json:"userid,omitempty"`
+	UserName       string `json:"name,omitempty"`
+	Alias          string `json:"alias,omitempty"`
+	Mobile         string `json:"mobile,omitempty"`
+	Department     []int  `json:"department,omitempty"`
+	Position       string `json:"position,omitempty"`
+	Gender         string `json:"gender,omitempty"`
+	Email          string `json:"email,omitempty"`
+	IsLeaderInDept []int  `json:"is_leader_in_dept,omitempty"`
+	Enable         int    `json:"enable,omitempty"`
 }
 
 //企业微信部门请求对应字段
 type RequestDepartment struct {
-	Department   string `json:"name"`
-	ParentID     int    `json:"parentid"`
-	DepartmentID int    `json:"id"`
+	Department   string `json:"name,omitempty"`
+	ParentID     int    `json:"parentid,omitempty"`
+	DepartmentID int    `json:"id,omitempty"`
 }
 
 /*
