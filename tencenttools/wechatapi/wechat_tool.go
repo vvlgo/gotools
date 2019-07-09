@@ -506,7 +506,7 @@ func DelUserList(corpid, corpsecret string, userList []string, redisConn rediscl
 AddDepartment 企业微信新增部门
 redisConn AccessToken缓存库
 */
-func AddDepartment(corpid, corpsecret string, dep Department, redisConn redisclient.MyRedisReConn) (id int, err error) {
+func AddDepartment(corpid, corpsecret string, dep RequestDepartment, redisConn redisclient.MyRedisReConn) (id int, err error) {
 	UrL := "https://qyapi.weixin.qq.com/cgi-bin/department/create?access_token=ACCESS_TOKEN"
 	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
 	if accessToken == "" {
