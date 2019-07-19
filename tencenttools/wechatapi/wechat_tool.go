@@ -86,6 +86,7 @@ type Signature struct {
 	BusiSignature string `json:"busi_signature"`
 	Noncestr      string `json:"nonceStr"`
 	Timestamp     int64  `json:"timestamp"`
+	AuthTplId     string `json:"auth_tpl_id"`
 }
 
 //企业微信人员请求对应字段
