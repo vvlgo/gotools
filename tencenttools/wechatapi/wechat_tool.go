@@ -114,9 +114,9 @@ type RequestDepartment struct {
 GetAccessToken 企业微信获取AccessToken
 redisConn AccessToken缓存库
 */
-func GetAccessToken(corpid, corpsecret string, redisConn redisclient.MyRedisReConn) (string, error) {
+func GetAccessToken(corpid, corpsecret string, redisConn redisclient.MyRedisReConn, key string) (string, error) {
 
-	code, _ := redis.String(redisConn.Redo("Get", "access_token"))
+	code, _ := redis.String(redisConn.Redo("Get", key+"access_token"))
 	if code != "" {
 		return code, nil
 	} else {
@@ -130,7 +130,7 @@ func GetAccessToken(corpid, corpsecret string, redisConn redisclient.MyRedisReCo
 		if err != nil {
 			return "", err
 		}
-		_, err = redisConn.Redo("Set", "access_token", re.AccessToken, "EX", re.ExpiresIn)
+		_, err = redisConn.Redo("Set", key+"access_token", re.AccessToken, "EX", re.ExpiresIn)
 		if err != nil {
 			return "", err
 		}
@@ -143,14 +143,14 @@ func GetAccessToken(corpid, corpsecret string, redisConn redisclient.MyRedisReCo
 GetAppTicket 企业微信获取AppTicket
 redisConn AppTicket缓存库，和AccessToken同库
 */
-func GetAppTicket(corpid, corpsecret string, redisConn redisclient.MyRedisReConn) (string, error) {
+func GetAppTicket(corpid, corpsecret string, redisConn redisclient.MyRedisReConn, key string) (string, error) {
 
 	ticket, _ := redis.String(redisConn.Redo("Get", "appticket"))
 	if ticket != "" {
 		return ticket, nil
 	} else {
 		url3 := ""
-		accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+		accessToken, err := GetAccessToken(corpid, corpsecret, redisConn, key)
 		if err != nil {
 			return "", err
 		}
@@ -179,13 +179,13 @@ func GetAppTicket(corpid, corpsecret string, redisConn redisclient.MyRedisReConn
 GetBusiTicket 企业微信获取BusiTicket
 redisConn BusiTicket缓存库，和AccessToken同库
 */
-func GetBusiTicket(corpid, corpsecret string, redisConn redisclient.MyRedisReConn) (string, error) {
+func GetBusiTicket(corpid, corpsecret string, redisConn redisclient.MyRedisReConn, key string) (string, error) {
 	ticket, _ := redis.String(redisConn.Redo("Get", "busiticket"))
 	if ticket != "" {
 		return ticket, nil
 	} else {
 		url3 := ""
-		accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+		accessToken, err := GetAccessToken(corpid, corpsecret, redisConn, key)
 		if accessToken != "" {
 			url3 = url3 + "https://qyapi.weixin.qq.com/cgi-bin/get_jsapi_ticket?access_token=" + accessToken
 			resp, err := httptool.GET(url3, nil)
@@ -207,12 +207,12 @@ func GetBusiTicket(corpid, corpsecret string, redisConn redisclient.MyRedisReCon
 	}
 }
 
-func GetSignature(url, corpid, corpsecret, agentId string, redisConn redisclient.MyRedisReConn) (*Signature, error) {
-	appticket, err := GetAppTicket(corpid, corpsecret, redisConn)
+func GetSignature(url, corpid, corpsecret, agentId string, redisConn redisclient.MyRedisReConn, key string) (*Signature, error) {
+	appticket, err := GetAppTicket(corpid, corpsecret, redisConn, key)
 	if err != nil {
 		return nil, err
 	}
-	busiticket, err := GetBusiTicket(corpid, corpsecret, redisConn)
+	busiticket, err := GetBusiTicket(corpid, corpsecret, redisConn, key)
 	if err != nil {
 		return nil, err
 	}
@@ -254,9 +254,9 @@ func Sha1(data []byte) string {
 SendMsg 发送审核信息到企业微信,，卡片信息
 模板根据自己情景修改
 */
-func SendMsg(orderUrl, toUser, corpid, corpsecret, title, cardInfo string, agentid int, redisConn redisclient.MyRedisReConn) (bool, error) {
+func SendMsg(orderUrl, toUser, corpid, corpsecret, title, cardInfo string, agentid int, redisConn redisclient.MyRedisReConn, key string) (bool, error) {
 	url2 := "https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token="
-	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn, key)
 	if accessToken == "" {
 		return false, err
 	} else {
@@ -290,9 +290,9 @@ func SendMsg(orderUrl, toUser, corpid, corpsecret, title, cardInfo string, agent
 GetUserByCode 企业微信获取用户基础数据
 redisConn AccessToken缓存库
 */
-func GetUserByCode(corpid, corpsecret, code string, redisConn redisclient.MyRedisReConn) (*WechatRep, error) {
+func GetUserByCode(corpid, corpsecret, code string, redisConn redisclient.MyRedisReConn, key string) (*WechatRep, error) {
 	codeUrl := "https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token=ACCESS_TOKEN&code=CODE"
-	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn, key)
 	if accessToken == "" {
 		return nil, err
 	}
@@ -317,9 +317,9 @@ func GetUserByCode(corpid, corpsecret, code string, redisConn redisclient.MyRedi
 GetUserByUserID 企业微信获取用户详细信息数据
 redisConn AccessToken缓存库
 */
-func GetUserByUserID(corpid, corpsecret, userid string, redisConn redisclient.MyRedisReConn) (*User, error) {
+func GetUserByUserID(corpid, corpsecret, userid string, redisConn redisclient.MyRedisReConn, key string) (*User, error) {
 	userUrl := "https://qyapi.weixin.qq.com/cgi-bin/user/get?access_token=ACCESS_TOKEN&userid=USERID"
-	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn, key)
 	if accessToken == "" {
 		return nil, err
 	}
@@ -344,9 +344,9 @@ func GetUserByUserID(corpid, corpsecret, userid string, redisConn redisclient.My
 GetDepartmentList 企业微信获取所有部门数据
 redisConn AccessToken缓存库
 */
-func GetDepartmentList(corpid, corpsecret, userid string, redisConn redisclient.MyRedisReConn) (*WechatRep, error) {
+func GetDepartmentList(corpid, corpsecret, userid string, redisConn redisclient.MyRedisReConn, key string) (*WechatRep, error) {
 	Url := "https://qyapi.weixin.qq.com/cgi-bin/department/list"
-	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn, key)
 	if accessToken == "" {
 		return nil, err
 	}
@@ -371,9 +371,9 @@ func GetDepartmentList(corpid, corpsecret, userid string, redisConn redisclient.
 GetDepartmentUserList 企业微信获取部门人员信息数据
 redisConn AccessToken缓存库
 */
-func GetDepartmentUserList(corpid, corpsecret, departmenID string, redisConn redisclient.MyRedisReConn) (*WechatRep, error) {
+func GetDepartmentUserList(corpid, corpsecret, departmenID string, redisConn redisclient.MyRedisReConn, key string) (*WechatRep, error) {
 	Url := "https://qyapi.weixin.qq.com/cgi-bin/user/list"
-	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn, key)
 	if accessToken == "" {
 		return nil, err
 	}
@@ -400,9 +400,9 @@ func GetDepartmentUserList(corpid, corpsecret, departmenID string, redisConn red
 AddUser 企业微信新增成员
 redisConn AccessToken缓存库
 */
-func AddUser(corpid, corpsecret string, user RequestUser, redisConn redisclient.MyRedisReConn) (bool, error) {
+func AddUser(corpid, corpsecret string, user RequestUser, redisConn redisclient.MyRedisReConn, key string) (bool, error) {
 	UrL := "https://qyapi.weixin.qq.com/cgi-bin/user/create?access_token=ACCESS_TOKEN"
-	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn, key)
 	if accessToken == "" {
 		return false, err
 	}
@@ -426,9 +426,9 @@ func AddUser(corpid, corpsecret string, user RequestUser, redisConn redisclient.
 UpdateUser 企业微信更新成员
 redisConn AccessToken缓存库
 */
-func UpdateUser(corpid, corpsecret string, user RequestUser, redisConn redisclient.MyRedisReConn) (bool, error) {
+func UpdateUser(corpid, corpsecret string, user RequestUser, redisConn redisclient.MyRedisReConn, key string) (bool, error) {
 	UrL := "https://qyapi.weixin.qq.com/cgi-bin/user/update?access_token=ACCESS_TOKEN"
-	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn, key)
 	if accessToken == "" {
 		return false, err
 	}
@@ -452,9 +452,9 @@ func UpdateUser(corpid, corpsecret string, user RequestUser, redisConn redisclie
 DelUser 企业微信删除成员
 redisConn AccessToken缓存库
 */
-func DelUser(corpid, corpsecret, userID string, redisConn redisclient.MyRedisReConn) (bool, error) {
+func DelUser(corpid, corpsecret, userID string, redisConn redisclient.MyRedisReConn, key string) (bool, error) {
 	UrL := "https://qyapi.weixin.qq.com/cgi-bin/user/delete?access_token=ACCESS_TOKEN&userid=USERID"
-	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn, key)
 	if accessToken == "" {
 		return false, err
 	}
@@ -479,9 +479,9 @@ func DelUser(corpid, corpsecret, userID string, redisConn redisclient.MyRedisReC
 DelUserList 企业微信批量删除成员
 redisConn AccessToken缓存库
 */
-func DelUserList(corpid, corpsecret string, userList []string, redisConn redisclient.MyRedisReConn) (bool, error) {
+func DelUserList(corpid, corpsecret string, userList []string, redisConn redisclient.MyRedisReConn, key string) (bool, error) {
 	UrL := "https://qyapi.weixin.qq.com/cgi-bin/user/batchdelete?access_token=ACCESS_TOKEN"
-	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn, key)
 	if accessToken == "" {
 		return false, err
 	}
@@ -507,9 +507,9 @@ func DelUserList(corpid, corpsecret string, userList []string, redisConn rediscl
 AddDepartment 企业微信新增部门
 redisConn AccessToken缓存库
 */
-func AddDepartment(corpid, corpsecret string, dep RequestDepartment, redisConn redisclient.MyRedisReConn) (id int, err error) {
+func AddDepartment(corpid, corpsecret string, dep RequestDepartment, redisConn redisclient.MyRedisReConn, key string) (id int, err error) {
 	UrL := "https://qyapi.weixin.qq.com/cgi-bin/department/create?access_token=ACCESS_TOKEN"
-	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn, key)
 	if accessToken == "" {
 		return -1, err
 	}
@@ -533,9 +533,9 @@ func AddDepartment(corpid, corpsecret string, dep RequestDepartment, redisConn r
 UpdateDepartment 企业微信更新部门
 redisConn AccessToken缓存库
 */
-func UpdateDepartment(corpid, corpsecret string, dep Department, redisConn redisclient.MyRedisReConn) (bool, error) {
+func UpdateDepartment(corpid, corpsecret string, dep Department, redisConn redisclient.MyRedisReConn, key string) (bool, error) {
 	UrL := "https://qyapi.weixin.qq.com/cgi-bin/department/update?access_token=ACCESS_TOKEN"
-	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn, key)
 	if accessToken == "" {
 		return false, err
 	}
@@ -559,9 +559,9 @@ func UpdateDepartment(corpid, corpsecret string, dep Department, redisConn redis
 DelDepartment 企业微信删除部门
 redisConn AccessToken缓存库
 */
-func DelDepartment(corpid, corpsecret, departmenID string, redisConn redisclient.MyRedisReConn) (bool, error) {
+func DelDepartment(corpid, corpsecret, departmenID string, redisConn redisclient.MyRedisReConn, key string) (bool, error) {
 	UrL := "https://qyapi.weixin.qq.com/cgi-bin/department/delete?access_token=ACCESS_TOKEN&id=ID"
-	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn)
+	accessToken, err := GetAccessToken(corpid, corpsecret, redisConn, key)
 	if accessToken == "" {
 		return false, err
 	}
